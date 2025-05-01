@@ -1,6 +1,14 @@
+export interface Category {
+  id: string;
+  name: string;
+  image: string;
+  description: string;
+}
+
 export interface Restaurant {
   id: string;
   name: string;
+  categoryId: string;
   cuisine: string;
   address: string;
   priceLevel: string;
@@ -15,4 +23,5 @@ export interface Restaurant {
   website: string;
   deliveryTime: string;
   deliveryFee: string;
+  tags: string[];
 }

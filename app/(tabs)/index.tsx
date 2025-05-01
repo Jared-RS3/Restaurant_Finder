@@ -19,17 +19,14 @@ import {
 } from 'react-native';
 import Animated, {
   Extrapolate,
-  FadeInDown,
-  FadeInUp,
   interpolate,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
-const BANNER_HEIGHT = 280;
+const BANNER_HEIGHT = 325;
 const AnimatedImageBackground =
   Animated.createAnimatedComponent(ImageBackground);
 
@@ -41,6 +38,10 @@ export default function HomeScreen() {
     router.push('/search-modal');
   };
 
+  const seeAll = () => {
+    router.push('/categories');
+  };
+
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollY.value = event.contentOffset.y;
@@ -48,89 +49,91 @@ export default function HomeScreen() {
   });
 
   const bannerAnimatedStyle = useAnimatedStyle(() => {
+    const scale = interpolate(
+      scrollY.value,
+      [-100, 0],
+      [1.5, 1],
+      Extrapolate.CLAMP
+    );
+
+    const translateY = interpolate(
+      scrollY.value,
+      [0, BANNER_HEIGHT],
+      [0, -BANNER_HEIGHT / 2],
+      Extrapolate.CLAMP
+    );
+
     return {
-      transform: [
-        {
-          scale: interpolate(
-            scrollY.value,
-            [-100, 0],
-            [1.5, 1],
-            Extrapolate.CLAMP
-          ),
-        },
-        {
-          translateY: interpolate(
-            scrollY.value,
-            [0, BANNER_HEIGHT],
-            [0, -BANNER_HEIGHT / 2],
-            Extrapolate.CLAMP
-          ),
-        },
-      ],
-      opacity: interpolate(
-        scrollY.value,
-        [0, BANNER_HEIGHT / 2],
-        [1, 0],
-        Extrapolate.CLAMP
-      ),
+      transform: [{ scale }, { translateY }],
     };
   });
 
-  const headerTextStyle = useAnimatedStyle(() => {
+  const overlayAnimatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [0, BANNER_HEIGHT / 2],
+      [1, 0],
+      Extrapolate.CLAMP
+    );
+
+    return { opacity };
+  });
+
+  const contentAnimatedStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(
+      scrollY.value,
+      [0, BANNER_HEIGHT],
+      [0, -BANNER_HEIGHT / 4],
+      Extrapolate.CLAMP
+    );
+
     return {
-      opacity: interpolate(
-        scrollY.value,
-        [0, BANNER_HEIGHT / 2],
-        [1, 0],
-        Extrapolate.CLAMP
-      ),
+      transform: [{ translateY }],
     };
   });
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
+
+      {/* Fixed Banner Background */}
+      <AnimatedImageBackground
+        source={{
+          uri: 'https://images.pexels.com/photos/3184183/pexels-photo-3184183.jpeg',
+        }}
+        style={[styles.bannerBackground, bannerAnimatedStyle]}
+      >
+        <Animated.View style={[styles.overlay, overlayAnimatedStyle]}>
+          <LinearGradient
+            colors={['rgba(0,0,0,0.6)', 'rgba(0,0,0,0.3)', 'transparent']}
+            style={StyleSheet.absoluteFill}
+          />
+        </Animated.View>
+      </AnimatedImageBackground>
+
       <Animated.ScrollView
         contentContainerStyle={styles.scrollView}
         showsVerticalScrollIndicator={false}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
       >
-        {/* Banner Section (now inside ScrollView) */}
-        <AnimatedImageBackground
-          source={{
-            uri: 'https://images.pexels.com/photos/3184183/pexels-photo-3184183.jpeg',
-          }}
-          style={[styles.banner, bannerAnimatedStyle]}
-        >
-          <LinearGradient
-            colors={['rgba(0,0,0,0.6)', 'rgba(0,0,0,0.3)']}
-            style={StyleSheet.absoluteFill}
-          />
-          <SafeAreaView style={styles.bannerContent}>
-            <View style={styles.topHeader}>
-              <View style={styles.locationRow}>
-                <MapPin size={20} color={theme.colors.white} />
-                <Text style={styles.location}>San Francisco, CA</Text>
-              </View>
-              <TouchableOpacity style={styles.notificationButton}>
-                <Bell size={24} color={theme.colors.white} />
-                <View style={styles.notificationBadge} />
-              </TouchableOpacity>
+        {/* Banner Content */}
+        <View style={styles.bannerContent}>
+          <View style={styles.topHeader}>
+            <View style={styles.locationRow}>
+              <MapPin size={20} color={theme.colors.white} />
+              <Text style={styles.location}>San Francisco, CA</Text>
             </View>
+            <TouchableOpacity style={styles.notificationButton}>
+              <Bell size={24} color={theme.colors.white} />
+              <View style={styles.notificationBadge} />
+            </TouchableOpacity>
+          </View>
 
-            <Animated.Text style={[styles.bannerText, headerTextStyle]}>
-              What would you like{'\n'}to eat today?
-            </Animated.Text>
-          </SafeAreaView>
-        </AnimatedImageBackground>
+          <Text style={styles.bannerText}>
+            What would you like{'\n'}to eat today?
+          </Text>
 
-        {/* Main Content */}
-        <Animated.View
-          entering={FadeInUp.duration(700)}
-          style={styles.mainContent}
-        >
-          {/* Search Bar */}
           <TouchableOpacity
             style={styles.searchBar}
             activeOpacity={0.8}
@@ -141,17 +144,17 @@ export default function HomeScreen() {
               Search for restaurants or dishes
             </Text>
           </TouchableOpacity>
+        </View>
 
+        {/* Main Content */}
+        <Animated.View style={[styles.mainContent, contentAnimatedStyle]}>
           {/* Categories */}
-          <Animated.View
-            entering={FadeInDown.delay(300).duration(600)}
-            style={styles.sectionHeader}
-          >
+          <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Categories</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={seeAll}>
               <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
-          </Animated.View>
+          </View>
           <FlatList
             data={categories}
             horizontal
@@ -166,7 +169,7 @@ export default function HomeScreen() {
           {/* Popular Now */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Popular Now</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={openSearch}>
               <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
           </View>
@@ -179,7 +182,7 @@ export default function HomeScreen() {
               <View
                 key={restaurant.id}
                 style={{
-                  marginRight: index !== mockRestaurants.length - 1 ? 30 : 0, // or any spacing you like
+                  marginRight: index !== mockRestaurants.length - 1 ? 30 : 0,
                 }}
               >
                 <RestaurantCard restaurant={restaurant} featured={true} />
@@ -190,12 +193,12 @@ export default function HomeScreen() {
           {/* Recommended */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recommended</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={openSearch}>
               <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.recommendedList}>
-            {mockRestaurants.slice(0, 4).map((restaurant) => (
+            {mockRestaurants.map((restaurant) => (
               <RestaurantCard
                 key={restaurant.id}
                 restaurant={restaurant}
@@ -212,21 +215,31 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.surface,
   },
-  banner: {
+  bannerBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     height: BANNER_HEIGHT,
-    backgroundColor: theme.colors.background,
+    zIndex: 0,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  scrollView: {
+    minHeight: '100%',
   },
   bannerContent: {
-    flex: 1,
+    height: BANNER_HEIGHT,
   },
   topHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingTop: 45,
   },
   locationRow: {
     flexDirection: 'row',
@@ -257,38 +270,36 @@ const styles = StyleSheet.create({
   },
   bannerText: {
     fontFamily: 'Poppins-Bold',
-    fontSize: 32,
+    fontSize: 25,
     color: theme.colors.white,
     paddingHorizontal: 20,
-    marginTop: 40,
+    marginTop: 25,
+    marginBottom: 20,
     lineHeight: 42,
-  },
-  mainContent: {
-    backgroundColor: theme.colors.surface,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingTop: 30,
-  },
-
-  scrollView: {
-    paddingTop: 30,
-    paddingBottom: 20,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surfaceLight,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 12,
     marginHorizontal: 20,
-    marginBottom: 32,
   },
   searchText: {
     fontFamily: 'Poppins-Regular',
     fontSize: 14,
     color: theme.colors.textSecondary,
     marginLeft: 12,
+  },
+  mainContent: {
+    flex: 1,
+    backgroundColor: theme.colors.surface,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingTop: 30,
+    paddingBottom: 20,
+    marginTop: -25,
   },
   sectionHeader: {
     flexDirection: 'row',

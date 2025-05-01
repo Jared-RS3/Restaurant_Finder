@@ -1,6 +1,12 @@
 import { theme } from '@/constants/theme';
 import { Tabs } from 'expo-router';
-import { Heart, Chrome as Home, Search, User } from 'lucide-react-native';
+import {
+  Grid2x2 as Grid,
+  Heart,
+  Chrome as Home,
+  MapPin,
+  User,
+} from 'lucide-react-native';
 import { StyleSheet } from 'react-native';
 
 export default function TabLayout() {
@@ -22,22 +28,27 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => <Home color={color} size={24} />,
         }}
       />
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="search"
         options={{
           title: 'Search',
           tabBarIcon: ({ color, size }) => <Search color={color} size={24} />,
         }}
+      /> */}
+      <Tabs.Screen
+        name="categories"
+        options={{
+          title: 'Categories',
+          tabBarIcon: ({ color, size }) => <Grid color={color} size={24} />,
+        }}
       />
-      {/* <Tabs.Screen
+      <Tabs.Screen
         name="map"
         options={{
           title: 'Map',
-          tabBarIcon: ({ color, size }) => (
-            <MapPin color={color} size={24} />
-          ),
+          tabBarIcon: ({ color, size }) => <MapPin color={color} size={24} />,
         }}
-      /> */}
+      />
       <Tabs.Screen
         name="favorites"
         options={{
